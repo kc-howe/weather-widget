@@ -62,23 +62,67 @@ def get_temp_forecast(manager):
     forecast_hourly = manager.forecast_at_place('Dayton, Ohio, USA', '3h')
 
     temps = [w.temperature('fahrenheit')['temp'] for w in forecast_hourly.forecast.weathers][:8]
+    precip = [w.rain[list(w.rain.keys())[0]] if w.rain else 0 for w in forecast_hourly.forecast.weathers][:8]
+    humid = [w.humidity for w in forecast_hourly.forecast.weathers][:8]
 
-    return times_fmt, temps
+    return times_fmt, temps, precip, humid
 
 '''Return a plot of forecasted temperature data'''
-def plot_temp_forecast(forecast):
-    times, temps = forecast
+def plot_temp_forecast(times, temps):
     fig = go.Figure()
     fig.add_trace(go.Scatter(x=list(range(len(temps))), y=temps, line_shape='spline', line=dict(color='steelBlue'), fill='tozeroy'))
     fig.update_layout(
-        title='Temperature Forecast',
         yaxis_title='Temperature \u00b0F',
         xaxis_title='Time',
         xaxis = dict(
             tickvals = list(range(len(times))),
             ticktext = times,
         ),
+        margin = {
+            't': 50
+        },
         yaxis_range=(max(temps) - .33*min(temps), .33*max(temps) + min(temps))
+    )
+    fig.update_xaxes(fixedrange=True)
+    fig.update_yaxes(fixedrange=True)
+
+    return fig
+
+'''Return a plot of forecasted precipitation data'''
+def plot_precip_forecast(times, precip):
+    fig = go.Figure()
+    fig.add_trace(go.Scatter(x=list(range(len(precip))), y=precip, line_shape='spline', line=dict(color='steelBlue'), fill='tozeroy'))
+    fig.update_layout(
+        yaxis_title='Precipitation (mm)',
+        xaxis_title='Time',
+        xaxis = dict(
+            tickvals = list(range(len(times))),
+            ticktext = times,
+        ),
+        margin = {
+            't': 50
+        },
+        #yaxis_range=(max(0,max(precip) - .33*min(precip)), max(6.5, .33*max(precip) + min(precip)))
+    )
+    fig.update_xaxes(fixedrange=True)
+    fig.update_yaxes(fixedrange=True)
+
+    return fig
+
+'''Return a plot of forecasted humidity data'''
+def plot_humid_forecast(times, humid):
+    fig = go.Figure()
+    fig.add_trace(go.Scatter(x=list(range(len(humid))), y=humid, line_shape='spline', line=dict(color='steelBlue'), fill='tozeroy'))
+    fig.update_layout(
+        yaxis_title='Humidity %',
+        xaxis_title='Time',
+        xaxis = dict(
+            tickvals = list(range(len(times))),
+            ticktext = times,
+        ),
+        margin = {
+            't': 50
+        }
     )
     fig.update_xaxes(fixedrange=True)
     fig.update_yaxes(fixedrange=True)
@@ -115,7 +159,7 @@ def layout_function():
 
     manager, weather, city_name, state, time, weekday = initialize_weather()
     wtr = get_weather_fmt(weather)
-    forecast = get_temp_forecast(manager)
+    times, temps, precip, humid = get_temp_forecast(manager)
     weekdays, daily_hi, daily_lo, daily_icon = get_daily_forecast(manager)
 
     return html.Center(html.Div([
@@ -167,8 +211,32 @@ def layout_function():
         ),
         
         # Temp Forecast
-        html.Center(
-            dcc.Graph(id='temperature-forecast', figure=plot_temp_forecast(forecast)),
+        html.Div(
+            dcc.Tabs(id='forecast-tabs', children=[
+                dcc.Tab(label='Temperature',children=[
+                    dcc.Graph(id='temperature-forecast', figure=plot_temp_forecast(times, temps)),
+                ],
+                style = {'padding':0, 'line-height':30, 'backgroundColor':'white', 'borderTop':'0px', 'borderLeft':'0px', 'borderBottom':'0px'},
+                selected_style={'padding':0, 'line-height':30, 'borderTop':'0px', 'borderLeft':'0px', 'borderBottom':'2px solid tomato'}
+                ),
+
+                dcc.Tab(label='Precipitation',children=[
+                    dcc.Graph(id='precipitation-forecast', figure=plot_precip_forecast(times, precip)),
+                ],
+                style = {'padding':0, 'line-height':30, 'backgroundColor':'white', 'borderTop':'0px','borderBottom':'0px'},
+                selected_style={'padding':0, 'line-height':30, 'borderTop':'0px', 'borderBottom':'2px solid tomato'}
+                ),
+
+                dcc.Tab(label='Humidity',children=[
+                    dcc.Graph(id='humidity-forecast', figure=plot_humid_forecast(times, humid)),
+                ],
+                style = {'padding':0, 'line-height':30, 'backgroundColor':'white', 'borderTop':'0px', 'borderRight':'0px', 'borderBottom':'0px'},
+                selected_style={'padding':0, 'line-height':30, 'borderTop':'0px', 'borderRight':'0px', 'borderBottom':'2px solid tomato'}
+                )
+            ],
+            style = {'height': 30, 'width':'67%'}
+            ),
+
             style={'float':'bottom', 'padding-top':'100px', 'width':'100%'}
         ),
 
@@ -221,6 +289,8 @@ Interval object used to update the time/temperature/status data every minute
         Output(component_id='location', component_property='children'),
         Output(component_id='date-time-status', component_property='children'),
         Output(component_id='temperature-forecast', component_property='figure'),
+        Output(component_id='precipitation-forecast', component_property='figure'),
+        Output(component_id='humidity-forecast', component_property='figure'),
     ],
     
     Input(component_id='interval-component', component_property='n_intervals')
@@ -228,7 +298,7 @@ Interval object used to update the time/temperature/status data every minute
 def refresh_page(n_intervals):
     manager, weather, city_name, state, time, weekday = initialize_weather()
     wtr = get_weather_fmt(weather)
-    forecast = get_temp_forecast(manager)
+    times, temps, precip, humid = get_temp_forecast(manager)
 
     icon = weather.weather_icon_url(size='4x')
 
@@ -240,9 +310,11 @@ def refresh_page(n_intervals):
     
     date_time_status = children = f'{weekday} {time}\n\n{wtr["status"]}'
 
-    figure = plot_temp_forecast(forecast)
+    temp_fig = plot_temp_forecast(times, temps)
+    precip_fig = plot_precip_forecast(times, precip)
+    humid_fig = plot_humid_forecast(times, humid)
 
-    return icon, temp, status, location, date_time_status, figure
+    return icon, temp, status, location, date_time_status, temp_fig, precip_fig, humid_fig
 
 '''Update daily forecast weekday names'''
 @app.callback(
