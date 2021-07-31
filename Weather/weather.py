@@ -1,6 +1,8 @@
 import dash
+import json
 import pyowm
 import pytz
+import re
 
 import dash_core_components as dcc
 import dash_html_components as html
@@ -8,6 +10,8 @@ import plotly.graph_objects as go
 
 from dash.dependencies import Input, Output
 from datetime import datetime, timedelta
+from flask import request
+from urllib.request import urlopen
 
 #%% Helper Functions
 
@@ -16,16 +20,19 @@ from datetime import datetime, timedelta
 manager and weather are used to retrieve current and forecasted weather data
 location and time data are used for data retrieval and output
 '''
-def initialize_weather():
+def initialize_weather(location):
+    city, state, country = location['city'], location['state'], location['country']
+    timezone_name = location['timezone']
+
     owm = pyowm.OWM('87d1e91aebccc414e8d2139c6461decd')
     manager = owm.weather_manager()
-    observation = manager.weather_at_place('Dayton, Ohio, USA')
+    observation = manager.weather_at_place(f'{city}, {state}, {country}')
     weather = observation.weather
 
     reg = owm.city_id_registry()
-    city_id, city_name, state = reg.ids_for('Dayton', country='OH')[0]
+    city_id, city_name, state = reg.ids_for(city, country=state)[0]
 
-    timezone = pytz.timezone('America/New_York')
+    timezone = pytz.timezone(timezone_name)
     time = datetime.today().astimezone(timezone).strftime('%I:%M %p')
     weekday = datetime.today().astimezone(timezone).strftime('%A')
 
@@ -157,7 +164,15 @@ app.title = 'Dayton, OH | Weather'
 '''Define the layout of the Dash application'''
 def layout_function():
 
-    manager, weather, city_name, state, time, weekday = initialize_weather()
+    # Set default location
+    location = dict(
+        city = 'Dayton',
+        state = 'OH',
+        country = 'US',
+        timezone = 'America/New_York'
+    )
+
+    manager, weather, city_name, state, time, weekday = initialize_weather(location)
     wtr = get_weather_fmt(weather)
     times, temps, precip, humid = get_temp_forecast(manager)
     weekdays, daily_hi, daily_lo, daily_icon = get_daily_forecast(manager)
@@ -273,6 +288,15 @@ def layout_function():
             n_intervals=0
         ),
 
+        dcc.Interval(
+            id='location-interval',
+            interval=3*1000, # three seconds
+            n_intervals=0
+        ),
+
+        # Storing client ip in a div element (bad)
+        html.P(id='client-location', children=json.dumps(location), style={'display':'None'})
+
     ], style={'width':'1024px'}))
 
 app.layout = layout_function
@@ -293,10 +317,14 @@ Interval object used to update the time/temperature/status data every minute
         Output(component_id='humidity-forecast', component_property='figure'),
     ],
     
-    Input(component_id='interval-component', component_property='n_intervals')
+    [
+        Input(component_id='interval-component', component_property='n_intervals'),
+        Input(component_id='client-location', component_property='children')
+    ]
 )
-def refresh_page(n_intervals):
-    manager, weather, city_name, state, time, weekday = initialize_weather()
+def refresh_page(n_intervals, location):
+    location = json.loads(location)
+    manager, weather, city_name, state, time, weekday = initialize_weather(location)
     wtr = get_weather_fmt(weather)
     times, temps, precip, humid = get_temp_forecast(manager)
 
@@ -323,10 +351,14 @@ def refresh_page(n_intervals):
         for i in range(7)
     ],
 
-    Input(component_id='interval-component', component_property='n_intervals')
+    [
+        Input(component_id='interval-component', component_property='n_intervals'),
+        Input(component_id='client-location', component_property='children')
+    ]
 )
-def update_weekdays(n_intervals):
-    manager, weather, city_name, state, time, weekday = initialize_weather()
+def update_weekdays(n_intervals, location):
+    location = json.loads(location)
+    manager, weather, city_name, state, time, weekday = initialize_weather(location)
     weekdays, daily_hi, daily_lo, daily_icon = get_daily_forecast(manager)
     weekdays = [w[:3] for w in weekdays] # just the first three letters
 
@@ -342,10 +374,15 @@ if __name__ == '__main__':
         for i in range(7)
     ],
 
-    Input(component_id='interval-component', component_property='n_intervals')
+    [
+        Input(component_id='interval-component', component_property='n_intervals'),
+        Input(component_id='client-location', component_property='children')
+    ]
+    
 )
-def update_daily_icons(n_intervals):
-    manager, weather, city_name, state, time, weekday = initialize_weather()
+def update_daily_icons(n_intervals, location):
+    location = json.loads(location)
+    manager, weather, city_name, state, time, weekday = initialize_weather(location)
     weekdays, daily_hi, daily_lo, daily_icon = get_daily_forecast(manager)
 
     return tuple(daily_icon[i] for i in range(len(weekdays)))
@@ -357,12 +394,30 @@ def update_daily_icons(n_intervals):
         for i in range(7)
     ],
 
-    Input(component_id='interval-component', component_property='n_intervals')
+    [
+        Input(component_id='interval-component', component_property='n_intervals'),
+        Input(component_id='client-location', component_property='children')
+    ]
 )
-def update_daily_hi_lo(n_intervals):
-    manager, weather, city_name, state, time, weekday = initialize_weather()
+def update_daily_hi_lo(n_intervals, location):
+    location = json.loads(location)
+    manager, weather, city_name, state, time, weekday = initialize_weather(location)
     weekdays, daily_hi, daily_lo, daily_icon = get_daily_forecast(manager)
 
     return tuple(f'**{daily_hi[i]}\u00b0** {daily_lo[i]}' for i in range(len(weekdays)))
 
-# %%
+'''Update location data only on initial page load'''
+@app.callback(
+    Output(component_id='client-ip', component_property='children'),
+    Input(component_id='location-interval', component_property='n_intervals')
+)
+def update_location(n_intervals):
+    if n_intervals < 1:
+        ip = request.remote_addr
+        url = f'http://ipinfo.io/{ip}'
+        response = urlopen(url)
+        data = json.load(response)
+        print(json.dumps(data))
+        return json.dumps(data)
+    else:
+        pass
