@@ -6,9 +6,10 @@ import re
 
 import dash_core_components as dcc
 import dash_html_components as html
+import pandas as pd
 import plotly.graph_objects as go
 
-from dash.dependencies import Input, Output
+from dash.dependencies import Input, Output, State
 from datetime import datetime, timedelta
 from flask import request
 from urllib.request import urlopen
@@ -21,8 +22,11 @@ manager and weather are used to retrieve current and forecasted weather data
 location and time data are used for data retrieval and output
 '''
 def initialize_weather(location):
-    city, state, country = location['city'], location['state'], location['country']
-    timezone_name = location['timezone']
+    # check if location is available, esle set default to Dayton, OH
+    try:
+        city, state, country, timezone_name = location['city'], location['region'], location['country'], location['timezone']
+    except:
+        city, state, country, timezone_name = DAYTON['city'], DAYTON['region'], DAYTON['country'], DAYTON['timezone']
 
     owm = pyowm.OWM('87d1e91aebccc414e8d2139c6461decd')
     manager = owm.weather_manager()
@@ -30,7 +34,8 @@ def initialize_weather(location):
     weather = observation.weather
 
     reg = owm.city_id_registry()
-    city_id, city_name, state = reg.ids_for(city, country=state)[0]
+    state_abbr = states_df[states_df['State']==state]['Abbreviation'].values[0]
+    city_id, city_name, state = reg.ids_for(city, state_abbr)[0]
 
     timezone = pytz.timezone(timezone_name)
     time = datetime.today().astimezone(timezone).strftime('%I:%M %p')
@@ -48,7 +53,7 @@ def get_weather_fmt(weather):
         hi = f'{round(weather.temperature("fahrenheit")["temp_max"])} \u00b0F',
         lo = f'{round(weather.temperature("fahrenheit")["temp_min"])} \u00b0F',
         precipitation = f'{weather.precipitation_probability or 0}%',
-        humidity = f'{weather.humidity}%',
+        humidity = f'{weather.humidity}',
         wind = f'{round(weather.wind(unit="miles_hour")["speed"])} mph',
         status = f'{weather.detailed_status.title()}'
     )
@@ -88,7 +93,7 @@ def plot_temp_forecast(times, temps):
         margin = {
             't': 50
         },
-        yaxis_range=(max(temps) - .33*min(temps), .33*max(temps) + min(temps))
+        yaxis_range=(0.5*(3*min(temps) - max(temps)), 0.5*(3*max(temps) - min(temps)))
     )
     fig.update_xaxes(fixedrange=True)
     fig.update_yaxes(fixedrange=True)
@@ -109,7 +114,7 @@ def plot_precip_forecast(times, precip):
         margin = {
             't': 50
         },
-        #yaxis_range=(max(0,max(precip) - .33*min(precip)), max(6.5, .33*max(precip) + min(precip)))
+        yaxis_range=(max(0, 0.5*(3*min(precip) - max(precip))), 0.5*(3*max(precip) - min(precip)))
     )
     fig.update_xaxes(fixedrange=True)
     fig.update_yaxes(fixedrange=True)
@@ -129,7 +134,8 @@ def plot_humid_forecast(times, humid):
         ),
         margin = {
             't': 50
-        }
+        },
+        yaxis_range=(max(0, 0.5*(3*min(humid) - max(humid))), 0.5*(3*max(humid) - min(humid)))
     )
     fig.update_xaxes(fixedrange=True)
     fig.update_yaxes(fixedrange=True)
@@ -159,18 +165,17 @@ external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
 
 app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
 
-app.title = 'Dayton, OH | Weather'
+app.title = 'Weather Data'
+
+states_df = pd.read_csv('https://raw.githubusercontent.com/jasonong/List-of-US-States/master/states.csv')
+
+DAYTON = {'city': 'Dayton', 'region': 'Ohio', 'country': 'US', 'timezone': 'America/New_York'}
 
 '''Define the layout of the Dash application'''
 def layout_function():
 
-    # Set default location
-    location = dict(
-        city = 'Dayton',
-        state = 'OH',
-        country = 'US',
-        timezone = 'America/New_York'
-    )
+    # set default location
+    location = DAYTON
 
     manager, weather, city_name, state, time, weekday = initialize_weather(location)
     wtr = get_weather_fmt(weather)
@@ -288,18 +293,27 @@ def layout_function():
             n_intervals=0
         ),
 
-        dcc.Interval(
-            id='location-interval',
-            interval=3*1000, # three seconds
-            n_intervals=0
-        ),
+        dcc.Location(id='url', refresh='False'),
 
-        # Storing client ip in a div element (bad)
-        html.P(id='client-location', children=json.dumps(location), style={'display':'None'})
+        # Storing client ip in a Store object
+        dcc.Store(id='memory-output', data=location)
 
     ], style={'width':'1024px'}))
 
 app.layout = layout_function
+
+'''Store location JSON data in Store object'''
+@app.callback(
+    Output(component_id='memory-output', component_property='data'),
+    Input(component_id='url', component_property='pathname')
+)
+def update_location(pathname):
+    ip = request.remote_addr
+    url = f'http://ipinfo.io/{ip}'
+    response = urlopen(url)
+    data = json.load(response)
+
+    return data
 
 '''Updates page data
 
@@ -319,11 +333,10 @@ Interval object used to update the time/temperature/status data every minute
     
     [
         Input(component_id='interval-component', component_property='n_intervals'),
-        Input(component_id='client-location', component_property='children')
+        Input(component_id='memory-output', component_property='data')
     ]
 )
 def refresh_page(n_intervals, location):
-    location = json.loads(location)
     manager, weather, city_name, state, time, weekday = initialize_weather(location)
     wtr = get_weather_fmt(weather)
     times, temps, precip, humid = get_temp_forecast(manager)
@@ -353,11 +366,10 @@ def refresh_page(n_intervals, location):
 
     [
         Input(component_id='interval-component', component_property='n_intervals'),
-        Input(component_id='client-location', component_property='children')
+        Input(component_id='memory-output', component_property='data')
     ]
 )
 def update_weekdays(n_intervals, location):
-    location = json.loads(location)
     manager, weather, city_name, state, time, weekday = initialize_weather(location)
     weekdays, daily_hi, daily_lo, daily_icon = get_daily_forecast(manager)
     weekdays = [w[:3] for w in weekdays] # just the first three letters
@@ -376,12 +388,11 @@ if __name__ == '__main__':
 
     [
         Input(component_id='interval-component', component_property='n_intervals'),
-        Input(component_id='client-location', component_property='children')
+        Input(component_id='memory-output', component_property='data')
     ]
     
 )
 def update_daily_icons(n_intervals, location):
-    location = json.loads(location)
     manager, weather, city_name, state, time, weekday = initialize_weather(location)
     weekdays, daily_hi, daily_lo, daily_icon = get_daily_forecast(manager)
 
@@ -396,28 +407,11 @@ def update_daily_icons(n_intervals, location):
 
     [
         Input(component_id='interval-component', component_property='n_intervals'),
-        Input(component_id='client-location', component_property='children')
+        Input(component_id='memory-output', component_property='data')
     ]
 )
 def update_daily_hi_lo(n_intervals, location):
-    location = json.loads(location)
     manager, weather, city_name, state, time, weekday = initialize_weather(location)
     weekdays, daily_hi, daily_lo, daily_icon = get_daily_forecast(manager)
 
     return tuple(f'**{daily_hi[i]}\u00b0** {daily_lo[i]}' for i in range(len(weekdays)))
-
-'''Update location data only on initial page load'''
-@app.callback(
-    Output(component_id='client-ip', component_property='children'),
-    Input(component_id='location-interval', component_property='n_intervals')
-)
-def update_location(n_intervals):
-    if n_intervals < 1:
-        ip = request.remote_addr
-        url = f'http://ipinfo.io/{ip}'
-        response = urlopen(url)
-        data = json.load(response)
-        print(json.dumps(data))
-        return json.dumps(data)
-    else:
-        pass
