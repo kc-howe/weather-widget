@@ -25,8 +25,10 @@ def initialize_weather(location):
     # check if location is available, esle set default to Dayton, OH
     try:
         city, state, country, timezone_name = location['city'], location['region'], location['country'], location['timezone']
+        lat, lon = float(location['loc'].split(',')[0]), float(location['loc'].split(',')[1])
     except:
         city, state, country, timezone_name = DAYTON['city'], DAYTON['region'], DAYTON['country'], DAYTON['timezone']
+        lat, lon = float(DAYTON['loc'].split(',')[0]), float(DAYTON['loc'].split(',')[1])
 
     owm = pyowm.OWM('87d1e91aebccc414e8d2139c6461decd')
     manager = owm.weather_manager()
@@ -35,13 +37,13 @@ def initialize_weather(location):
 
     reg = owm.city_id_registry()
     state_abbr = states_df[states_df['State']==state]['Abbreviation'].values[0]
-    city_id, city_name, state = reg.ids_for(city, state_abbr)[0]
+    city_id, city, state = reg.ids_for(city, state_abbr)[0]
 
     timezone = pytz.timezone(timezone_name)
     time = datetime.today().astimezone(timezone).strftime('%I:%M %p')
     weekday = datetime.today().astimezone(timezone).strftime('%A')
 
-    return manager, weather, city_name, state, time, weekday
+    return manager, weather, city, state, country, timezone_name, lat, lon, time, weekday
 
 '''Return a dictionary of formatted weather data
 
@@ -64,14 +66,14 @@ def get_weather_fmt(weather):
 
 temperatures and times used to plot forecasted temperature data
 '''
-def get_temp_forecast(manager):
-    timezone = pytz.timezone('America/New_York')
+def get_forecast(manager, city, state, country, timezone_name):
+    timezone = pytz.timezone(timezone_name)
     now = datetime.now().astimezone(timezone)
 
     times = [now + timedelta(hours=3*i) for i in range(8)]
     times_fmt = [t.strftime('%I:00 %p') for t in times]
 
-    forecast_hourly = manager.forecast_at_place('Dayton, Ohio, USA', '3h')
+    forecast_hourly = manager.forecast_at_place(f'{city}, {state}, {country}', '3h')
 
     temps = [w.temperature('fahrenheit')['temp'] for w in forecast_hourly.forecast.weathers][:8]
     precip = [w.rain[list(w.rain.keys())[0]] if w.rain else 0 for w in forecast_hourly.forecast.weathers][:8]
@@ -146,13 +148,13 @@ def plot_humid_forecast(times, humid):
 
 Formatted times, daily high/low temperatures, and weather icons used for week-long daily forecast display
 '''
-def get_daily_forecast(manager):
+def get_daily_forecast(manager, lat, lon):
     now = datetime.now().astimezone()
 
     times = [now + timedelta(days=i) for i in range(7)]
     times_fmt = [t.strftime('%A') for t in times]
     
-    forecast_daily = manager.one_call(lat=39.7589, lon=-84.1916).forecast_daily
+    forecast_daily = manager.one_call(lat, lon).forecast_daily
     temps_hi =  [round(w.temperature('fahrenheit')['max']) for w in forecast_daily][:7]
     temps_lo =  [round(w.temperature('fahrenheit')['min']) for w in forecast_daily][:7]
     icons = [w.weather_icon_url(size='4x') for w in forecast_daily[:7]]
@@ -169,7 +171,7 @@ app.title = 'Weather Data'
 
 states_df = pd.read_csv('https://raw.githubusercontent.com/jasonong/List-of-US-States/master/states.csv')
 
-DAYTON = {'city': 'Dayton', 'region': 'Ohio', 'country': 'US', 'timezone': 'America/New_York'}
+DAYTON = {'city': 'Dayton', 'region': 'Ohio', 'country': 'US', 'timezone': 'America/New_York', 'loc':'39.7589,-84.1916'}
 
 '''Define the layout of the Dash application'''
 def layout_function():
@@ -177,10 +179,10 @@ def layout_function():
     # set default location
     location = DAYTON
 
-    manager, weather, city_name, state, time, weekday = initialize_weather(location)
+    manager, weather, city, state, country, timezone_name, lat, lon, time, weekday = initialize_weather(location)
     wtr = get_weather_fmt(weather)
-    times, temps, precip, humid = get_temp_forecast(manager)
-    weekdays, daily_hi, daily_lo, daily_icon = get_daily_forecast(manager)
+    times, temps, precip, humid = get_forecast(manager, city, state, country, timezone_name)
+    weekdays, daily_hi, daily_lo, daily_icon = get_daily_forecast(manager, lat, lon)
 
     return html.Center(html.Div([
         # Header
@@ -210,7 +212,7 @@ def layout_function():
 
                 html.Div(
                     [
-                        dcc.Markdown(id='location', children=f'##### {city_name}, {state}'),
+                        dcc.Markdown(id='location', children=f'##### {city}, {state}'),
 
                         html.Div(
                             
@@ -289,7 +291,7 @@ def layout_function():
 
         dcc.Interval(
             id='interval-component',
-            interval= 60*1000, # every minute
+            interval= 3*60*1000, # every three minutes
             n_intervals=0
         ),
 
@@ -309,9 +311,16 @@ app.layout = layout_function
 )
 def update_location(pathname):
     ip = request.remote_addr
-    url = f'http://ipinfo.io/{ip}'
+
+    # For testing location services
+    if ip == '127.0.0.1':
+        ip = '8.8.8.8'
+
+    url = f'http://ipinfo.io/{ip}?token=00dd9ffb16a928'
     response = urlopen(url)
     data = json.load(response)
+
+    print(data)
 
     return data
 
@@ -337,9 +346,9 @@ Interval object used to update the time/temperature/status data every minute
     ]
 )
 def refresh_page(n_intervals, location):
-    manager, weather, city_name, state, time, weekday = initialize_weather(location)
+    manager, weather, city, state, country, timezone_name, lat, lon, time, weekday = initialize_weather(location)
     wtr = get_weather_fmt(weather)
-    times, temps, precip, humid = get_temp_forecast(manager)
+    times, temps, precip, humid = get_forecast(manager, city, state, country, timezone_name)
 
     icon = weather.weather_icon_url(size='4x')
 
@@ -347,7 +356,7 @@ def refresh_page(n_intervals, location):
 
     status = f'Precipitation: {wtr["precipitation"]}\n\nHumidity: {wtr["humidity"]}%\n\nWind: {wtr["wind"]}'
     
-    location = f'##### {city_name}, {state}'
+    location = f'##### {city}, {state}'
     
     date_time_status = children = f'{weekday} {time}\n\n{wtr["status"]}'
 
@@ -370,8 +379,8 @@ def refresh_page(n_intervals, location):
     ]
 )
 def update_weekdays(n_intervals, location):
-    manager, weather, city_name, state, time, weekday = initialize_weather(location)
-    weekdays, daily_hi, daily_lo, daily_icon = get_daily_forecast(manager)
+    manager, weather, city, state, country, timezone_name, lat, lon, time, weekday = initialize_weather(location)
+    weekdays, daily_hi, daily_lo, daily_icon = get_daily_forecast(manager, lat, lon)
     weekdays = [w[:3] for w in weekdays] # just the first three letters
 
     return tuple(weekdays)
@@ -393,8 +402,8 @@ if __name__ == '__main__':
     
 )
 def update_daily_icons(n_intervals, location):
-    manager, weather, city_name, state, time, weekday = initialize_weather(location)
-    weekdays, daily_hi, daily_lo, daily_icon = get_daily_forecast(manager)
+    manager, weather, city, state, country, timezone_name, lat, lon, time, weekday = initialize_weather(location)
+    weekdays, daily_hi, daily_lo, daily_icon = get_daily_forecast(manager, lat, lon)
 
     return tuple(daily_icon[i] for i in range(len(weekdays)))
 
@@ -411,7 +420,7 @@ def update_daily_icons(n_intervals, location):
     ]
 )
 def update_daily_hi_lo(n_intervals, location):
-    manager, weather, city_name, state, time, weekday = initialize_weather(location)
-    weekdays, daily_hi, daily_lo, daily_icon = get_daily_forecast(manager)
+    manager, weather, city, state, country, timezone_name, lat, lon, time, weekday = initialize_weather(location)
+    weekdays, daily_hi, daily_lo, daily_icon = get_daily_forecast(manager, lat, lon)
 
     return tuple(f'**{daily_hi[i]}\u00b0** {daily_lo[i]}' for i in range(len(weekdays)))
