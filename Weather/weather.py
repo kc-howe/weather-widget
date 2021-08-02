@@ -289,6 +289,11 @@ def layout_function():
             
         ),
 
+        html.Center(
+            dcc.Markdown('Data provided by OpenWeather\u2122.'),
+            style = {'padding-top':'100px','font-size':'12px'}
+        ),
+
         dcc.Interval(
             id='interval-component',
             interval= 5*60*1000, # every five minutes
