@@ -10,6 +10,7 @@ import pandas as pd
 import plotly.graph_objects as go
 
 from dash.dependencies import Input, Output, State
+from dash.exceptions import PreventUpdate
 from datetime import datetime, timedelta
 from flask import request
 from urllib.request import urlopen
@@ -296,7 +297,7 @@ def layout_function():
 
         dcc.Interval(
             id='interval-component',
-            interval= 5*60*1000, # every five minutes
+            interval= 60*1000, # one minute (ms)
             n_intervals=0
         ),
 
@@ -318,14 +319,12 @@ def update_location(pathname):
     ip = request.remote_addr
 
     # For testing location services
-    if ip == '127.0.0.1':
-        ip = '8.8.8.8'
+    #if ip == '127.0.0.1':
+    #    ip = '8.8.8.8'
 
     url = f'http://ipinfo.io/{ip}?token=00dd9ffb16a928'
     response = urlopen(url)
     data = json.load(response)
-
-    print(data)
 
     return data
 
@@ -380,18 +379,22 @@ def refresh_page(n_intervals, location):
 
     [
         Input(component_id='interval-component', component_property='n_intervals'),
+        Input(component_id='date-time-status', component_property='children'),
         Input(component_id='memory-output', component_property='data')
     ]
 )
-def update_weekdays(n_intervals, location):
-    manager, weather, city, state, country, timezone_name, lat, lon, time, weekday = initialize_weather(location)
-    weekdays, daily_hi, daily_lo, daily_icon = get_daily_forecast(manager, lat, lon)
-    weekdays = [w[:3] for w in weekdays] # just the first three letters
+def update_weekdays(n_intervals, datetime, location):
+    # Only check for new daily forecasts at midnight
+    if datetime.split()[1] == '12:00':
+        if datetime.split()[2] == 'AM':
 
-    return tuple(weekdays)
+            manager, weather, city, state, country, timezone_name, lat, lon, time, weekday = initialize_weather(location)
+            weekdays, daily_hi, daily_lo, daily_icon = get_daily_forecast(manager, lat, lon)
+            weekdays = [w[:3] for w in weekdays] # just the first three letters
 
-if __name__ == '__main__':
-    app.run_server(debug=False, host='0.0.0.0')
+            return tuple(weekdays)
+
+    raise PreventUpdate
 
 '''Update daily forecast weather icons'''
 @app.callback(
@@ -402,15 +405,22 @@ if __name__ == '__main__':
 
     [
         Input(component_id='interval-component', component_property='n_intervals'),
+        Input(component_id='date-time-status', component_property='children'),
         Input(component_id='memory-output', component_property='data')
     ]
     
 )
-def update_daily_icons(n_intervals, location):
-    manager, weather, city, state, country, timezone_name, lat, lon, time, weekday = initialize_weather(location)
-    weekdays, daily_hi, daily_lo, daily_icon = get_daily_forecast(manager, lat, lon)
+def update_daily_icons(n_intervals, datetime, location):
+    # Only check for new daily forecasts at midnight
+    if datetime.split()[1] == '12:00':
+        if datetime.split()[2] == 'AM':
+        
+            manager, weather, city, state, country, timezone_name, lat, lon, time, weekday = initialize_weather(location)
+            weekdays, daily_hi, daily_lo, daily_icon = get_daily_forecast(manager, lat, lon)
 
-    return tuple(daily_icon[i] for i in range(len(weekdays)))
+            return tuple(daily_icon[i] for i in range(len(weekdays)))
+    
+    raise PreventUpdate
 
 '''Update daily forecast high/low temperatures'''
 @app.callback(
@@ -421,11 +431,21 @@ def update_daily_icons(n_intervals, location):
 
     [
         Input(component_id='interval-component', component_property='n_intervals'),
+        Input(component_id='date-time-status', component_property='children'),
         Input(component_id='memory-output', component_property='data')
     ]
 )
-def update_daily_hi_lo(n_intervals, location):
-    manager, weather, city, state, country, timezone_name, lat, lon, time, weekday = initialize_weather(location)
-    weekdays, daily_hi, daily_lo, daily_icon = get_daily_forecast(manager, lat, lon)
+def update_daily_hi_lo(n_intervals, datetime, location):
+    # Only check for new daily forecasts at midnight
+    if datetime.split()[1] == '12:00':
+        if datetime.split()[2] == 'AM':
 
-    return tuple(f'**{daily_hi[i]}\u00b0** {daily_lo[i]}' for i in range(len(weekdays)))
+            manager, weather, city, state, country, timezone_name, lat, lon, time, weekday = initialize_weather(location)
+            weekdays, daily_hi, daily_lo, daily_icon = get_daily_forecast(manager, lat, lon)
+
+            return tuple(f'**{daily_hi[i]}\u00b0** {daily_lo[i]}' for i in range(len(weekdays)))
+    
+    raise PreventUpdate
+
+if __name__ == '__main__':
+    app.run_server(debug=False, host='0.0.0.0')

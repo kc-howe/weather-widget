@@ -2,7 +2,7 @@
 A basic weather widget built using the Dash application framework.
 
 ## Description
-This widget displays current temperature, precipitation, humidity, and wind data for the user's current location. A 21-hour forecast of temperature data is provided, along with a 7-day daily forecast. All data is updated every five minutes or upon reloading the page, allowing for a mostly continuous live-stream of weather data.
+This widget displays current temperature, precipitation, humidity, and wind data for the user's current location. A 21-hour forecast of temperature data is provided, along with a 7-day daily forecast. All data is updated every minute or upon reloading the page, allowing for a continuous live-stream of weather data.
 
 ## Website
 The fully deployed application is available [here](http://18.222.202.114:8050/).
