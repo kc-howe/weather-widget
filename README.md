@@ -11,3 +11,7 @@ The fully deployed application is available [here](http://18.222.202.114:8050/).
 - All weather data and weather icons are provided by [OpenWeatherMap](https://openweathermap.org/).
 - Containerization performed using [Docker](https://www.docker.com/).
 - Deployed from an [AWS](https://aws.amazon.com/) instance.
+- Location data provided by [https://ipinfo.io/](ipinfo.io).
+
+## Notes
+- Location data will not be accurate when using a mobile network, as there is no correlation between mobile IP addresses and physical location.
