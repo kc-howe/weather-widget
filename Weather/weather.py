@@ -291,7 +291,7 @@ def layout_function():
 
         dcc.Interval(
             id='interval-component',
-            interval= 3*60*1000, # every three minutes
+            interval= 5*60*1000, # every five minutes
             n_intervals=0
         ),
 
