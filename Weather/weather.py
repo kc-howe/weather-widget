@@ -2,7 +2,7 @@ import dash
 import json
 import pyowm
 import pytz
-import re
+import requests
 
 import dash_core_components as dcc
 import dash_html_components as html
@@ -31,7 +31,7 @@ def initialize_weather(location):
         city, state, country, timezone_name = DAYTON['city'], DAYTON['region'], DAYTON['country'], DAYTON['timezone']
         lat, lon = float(DAYTON['loc'].split(',')[0]), float(DAYTON['loc'].split(',')[1])
 
-    owm = pyowm.OWM('87d1e91aebccc414e8d2139c6461decd')
+    owm = pyowm.OWM(API_KEY)
     manager = owm.weather_manager()
     observation = manager.weather_at_place(f'{city}, {state}, {country}')
     weather = observation.weather
@@ -149,8 +149,9 @@ def plot_humid_forecast(times, humid):
 
 Formatted times, daily high/low temperatures, and weather icons used for week-long daily forecast display
 '''
-def get_daily_forecast(manager, lat, lon):
-    now = datetime.now().astimezone()
+def get_daily_forecast(manager, lat, lon, timezone_name):
+    timezone = pytz.timezone(timezone_name)
+    now = datetime.now().astimezone(timezone)
 
     times = [now + timedelta(days=i) for i in range(7)]
     times_fmt = [t.strftime('%A') for t in times]
@@ -162,6 +163,24 @@ def get_daily_forecast(manager, lat, lon):
 
     return times_fmt, temps_hi, temps_lo, icons
 
+def get_emergency_alerts(manager, lat, lon, timezone_name):
+    timezone = pytz.timezone(timezone_name)
+
+    response = requests.get(f'https://api.openweathermap.org/data/2.5/onecall?lat={lat}&lon={lon}&exclude=current,minutely,hourly,daily&appid={API_KEY}')
+    response_dict = response.json()
+
+    if 'alerts' in response_dict.keys():
+        alerts = response_dict['alerts']
+
+        sender = alerts['sender_name']
+        event = alerts['event']
+        start = datetime.utcfromtimestamp(alerts['start']).astimezone(timezone_name).strftime('%I:%M %p')
+        end = datetime.utcfromtimestamp(alerts['end']).astimezone(timezone_name).strftime('%I:%M %p')
+        description = alerts['description']
+
+        return sender, event, start, end, description
+    
+    return None, None, None, None, None
 #%% Build Dash App
 
 external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
@@ -174,6 +193,8 @@ states_df = pd.read_csv('https://raw.githubusercontent.com/jasonong/List-of-US-S
 
 DAYTON = {'city': 'Dayton', 'region': 'Ohio', 'country': 'US', 'timezone': 'America/New_York', 'loc':'39.7589,-84.1916'}
 
+API_KEY = '87d1e91aebccc414e8d2139c6461decd'
+
 '''Define the layout of the Dash application'''
 def layout_function():
 
@@ -183,7 +204,7 @@ def layout_function():
     manager, weather, city, state, country, timezone_name, lat, lon, time, weekday = initialize_weather(location)
     wtr = get_weather_fmt(weather)
     times, temps, precip, humid = get_forecast(manager, city, state, country, timezone_name)
-    weekdays, daily_hi, daily_lo, daily_icon = get_daily_forecast(manager, lat, lon)
+    weekdays, daily_hi, daily_lo, daily_icon = get_daily_forecast(manager, lat, lon, timezone_name)
 
     return html.Center(html.Div([
         # Header
@@ -233,6 +254,12 @@ def layout_function():
             ]
         ),
         
+        # National Weather Alerts
+        html.Div(
+            dcc.Markdown(id='emergency-alert', children=''),
+            style={'display':'none'}
+        ),
+
         # Temp Forecast
         html.Div(
             dcc.Tabs(id='forecast-tabs', children=[
@@ -296,12 +323,16 @@ def layout_function():
         ),
 
         dcc.Interval(
-            id='interval-component',
+            id='minute-interval',
             interval= 60*1000, # one minute (ms)
             n_intervals=0
         ),
 
-        dcc.Location(id='url', refresh='False'),
+        dcc.Interval(
+            id='thirty-minute-interval',
+            interval=30*60*1000, # thirty minutes (ms)
+            n_intervals=0
+        ),
 
         # Storing client ip in a Store object
         dcc.Store(id='memory-output', data=location)
@@ -345,7 +376,7 @@ Interval object used to update the time/temperature/status data every minute
     ],
     
     [
-        Input(component_id='interval-component', component_property='n_intervals'),
+        Input(component_id='minute-interval', component_property='n_intervals'),
         Input(component_id='memory-output', component_property='data')
     ]
 )
@@ -378,7 +409,7 @@ def refresh_page(n_intervals, location):
     ],
 
     [
-        Input(component_id='interval-component', component_property='n_intervals'),
+        Input(component_id='minute-interval', component_property='n_intervals'),
         Input(component_id='date-time-status', component_property='children'),
         Input(component_id='memory-output', component_property='data')
     ]
@@ -389,7 +420,7 @@ def update_weekdays(n_intervals, datetime, location):
         if datetime.split()[2] == 'AM':
 
             manager, weather, city, state, country, timezone_name, lat, lon, time, weekday = initialize_weather(location)
-            weekdays, daily_hi, daily_lo, daily_icon = get_daily_forecast(manager, lat, lon)
+            weekdays, daily_hi, daily_lo, daily_icon = get_daily_forecast(manager, lat, lon, timezone_name)
             weekdays = [w[:3] for w in weekdays] # just the first three letters
 
             return tuple(weekdays)
@@ -404,7 +435,7 @@ def update_weekdays(n_intervals, datetime, location):
     ],
 
     [
-        Input(component_id='interval-component', component_property='n_intervals'),
+        Input(component_id='minute-interval', component_property='n_intervals'),
         Input(component_id='date-time-status', component_property='children'),
         Input(component_id='memory-output', component_property='data')
     ]
@@ -416,7 +447,7 @@ def update_daily_icons(n_intervals, datetime, location):
         if datetime.split()[2] == 'AM':
         
             manager, weather, city, state, country, timezone_name, lat, lon, time, weekday = initialize_weather(location)
-            weekdays, daily_hi, daily_lo, daily_icon = get_daily_forecast(manager, lat, lon)
+            weekdays, daily_hi, daily_lo, daily_icon = get_daily_forecast(manager, lat, lon, timezone_name)
 
             return tuple(daily_icon[i] for i in range(len(weekdays)))
     
@@ -430,7 +461,7 @@ def update_daily_icons(n_intervals, datetime, location):
     ],
 
     [
-        Input(component_id='interval-component', component_property='n_intervals'),
+        Input(component_id='minute-interval', component_property='n_intervals'),
         Input(component_id='date-time-status', component_property='children'),
         Input(component_id='memory-output', component_property='data')
     ]
@@ -441,11 +472,36 @@ def update_daily_hi_lo(n_intervals, datetime, location):
         if datetime.split()[2] == 'AM':
 
             manager, weather, city, state, country, timezone_name, lat, lon, time, weekday = initialize_weather(location)
-            weekdays, daily_hi, daily_lo, daily_icon = get_daily_forecast(manager, lat, lon)
+            weekdays, daily_hi, daily_lo, daily_icon = get_daily_forecast(manager, lat, lon, timezone_name)
 
             return tuple(f'**{daily_hi[i]}\u00b0** {daily_lo[i]}' for i in range(len(weekdays)))
     
     raise PreventUpdate
+
+@app.callback(
+    [
+        Output(component_id='emergency-alert-div', component_property='style'),
+        Output(component_id='emergency-alert', component_property='children')
+    ],
+
+    [
+        Input(component_id='thirty-minute-interval', component_property='n_intervals'),
+        Input(component_id='memory-output', component_property='data')
+    ]
+)
+def update_emergency_alert(n_intervals, location):
+    manager, weather, city, state, country, timezone_name, lat, lon, time, weekday = initialize_weather(location)
+
+    sender, event, start, end, description = get_emergency_alerts(manager, lat, lon, timezone_name)
+
+    if event:
+        style = {'color':'white', 'background-color':'crimson', 'text-align':'justify', 'border-radius':'5px', 'width':'100%', 'display':'inline-block','padding-top':'5px', 'padding-left':'10px'}
+        message = f'**\u26A0 National Weather Alert:** {sender} has issued a {event} from {start} until {end}.\n\n{description}'
+    else:
+        style = {'display':'none'}
+        message = ''
+
+    return style, message
 
 if __name__ == '__main__':
     app.run_server(debug=False, host='0.0.0.0')
