@@ -334,6 +334,9 @@ def layout_function():
             n_intervals=0
         ),
 
+        # Location object (dummy to trigger location grab)
+        dcc.Location(id='url'),
+
         # Storing client ip in a Store object
         dcc.Store(id='memory-output', data=location)
 
@@ -348,10 +351,6 @@ app.layout = layout_function
 )
 def update_location(pathname):
     ip = request.remote_addr
-
-    # For testing location services
-    #if ip == '127.0.0.1':
-    #    ip = '8.8.8.8'
 
     url = f'http://ipinfo.io/{ip}?token=00dd9ffb16a928'
     response = urlopen(url)
