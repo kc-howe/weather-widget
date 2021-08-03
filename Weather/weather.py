@@ -172,13 +172,13 @@ def get_emergency_alerts(manager, lat, lon, timezone_name):
     if 'alerts' in response_dict.keys():
         alerts = response_dict['alerts']
 
-        sender = alerts['sender_name']
-        event = alerts['event']
-        start = datetime.utcfromtimestamp(alerts['start']).astimezone(timezone_name).strftime('%I:%M %p')
-        end = datetime.utcfromtimestamp(alerts['end']).astimezone(timezone_name).strftime('%I:%M %p')
-        description = alerts['description']
+        senders = [alert['sender_name'] for alert in alerts]
+        events = [alert['event'] for alert in alerts]
+        starts = [datetime.utcfromtimestamp(alert['start']).astimezone(timezone_name).strftime('%I:%M %p') for alert in alerts] # ugly
+        ends = [datetime.utcfromtimestamp(alert['end']).astimezone(timezone_name).strftime('%I:%M %p') for alert in alerts]
+        descriptions = [alert['description'] for alert in alerts]
 
-        return sender, event, start, end, description
+        return senders, events, starts, ends, descriptions
     
     return None, None, None, None, None
 #%% Build Dash App
@@ -352,6 +352,9 @@ app.layout = layout_function
 def update_location(pathname):
     ip = request.remote_addr
 
+    if ip == '127.0.0.1':
+        ip = '8.8.8.8'
+
     url = f'http://ipinfo.io/{ip}?token=00dd9ffb16a928'
     response = urlopen(url)
     data = json.load(response)
@@ -491,14 +494,19 @@ def update_daily_hi_lo(n_intervals, datetime, location):
 def update_emergency_alert(n_intervals, location):
     manager, weather, city, state, country, timezone_name, lat, lon, time, weekday = initialize_weather(location)
 
-    sender, event, start, end, description = get_emergency_alerts(manager, lat, lon, timezone_name)
+    senders, events, starts, ends, descriptions = get_emergency_alerts(manager, lat, lon, timezone_name)
 
-    if event:
+    style = {'display':'none'}
+    message = ''
+
+    if senders:
+
         style = {'color':'white', 'background-color':'crimson', 'text-align':'justify', 'border-radius':'5px', 'width':'100%', 'display':'inline-block','padding-top':'5px', 'padding-left':'10px'}
-        message = f'**\u26A0 National Weather Alert:** {sender} has issued a {event} from {start} until {end}.\n\n{description}'
-    else:
-        style = {'display':'none'}
-        message = ''
+
+        for i in len(senders):
+            message = f'**\u26A0 National Weather Alert:** {senders[i]} has issued a {events[i]} from {starts[i]} until {ends[i]}.\n\n{descriptions[i]}'
+            if len(senders > i+1):
+                message += '\n\n'
 
     return style, message
 
