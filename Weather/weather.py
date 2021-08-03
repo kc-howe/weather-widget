@@ -511,4 +511,4 @@ def update_emergency_alert(n_intervals, location):
     return style, message
 
 if __name__ == '__main__':
-    app.run_server(debug=False, host='0.0.0.0')
+    app.run_server(debug=False, port=80, host='0.0.0.0')
