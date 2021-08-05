@@ -85,7 +85,18 @@ def get_forecast(manager, city, state, country, timezone_name):
 '''Return a plot of forecasted temperature data'''
 def plot_temp_forecast(times, temps):
     fig = go.Figure()
-    fig.add_trace(go.Scatter(x=list(range(len(temps))), y=temps, line_shape='spline', line=dict(color='steelBlue'), fill='tozeroy'))
+    fig.add_trace(go.Scatter(
+        x=list(range(len(temps))),
+        y=temps,
+        line_shape='spline',
+        line=dict(color='steelBlue'),
+        fill='tozeroy',
+        mode='markers+text',
+        # Display rounded temperatures above all points but the first and last
+        text=[round(temps[i]) if i in range(1,len(temps)-1) else None for i in range(len(temps))],
+        textfont=dict(size=14),
+        textposition='top center'
+    ))
     fig.update_layout(
         yaxis_title='Temperature \u00b0F',
         xaxis = dict(
@@ -108,7 +119,18 @@ def plot_temp_forecast(times, temps):
 '''Return a plot of forecasted precipitation data'''
 def plot_precip_forecast(times, precip):
     fig = go.Figure()
-    fig.add_trace(go.Scatter(x=list(range(len(precip))), y=precip, line_shape='spline', line=dict(color='steelBlue'), fill='tozeroy'))
+    fig.add_trace(go.Scatter(
+        x=list(range(len(precip))),
+        y=precip,
+        line_shape='spline',
+        line=dict(color='steelBlue'),
+        fill='tozeroy',
+        mode='markers+text',
+        # Display rounded temperatures above all points but the first and last
+        text=[round(precip[i]) if i in range(1,len(precip)-1) else None for i in range(len(precip))],
+        textfont=dict(size=14),
+        textposition='top center'
+    ))
     fig.update_layout(
         yaxis_title='Precipitation (mm)',
         xaxis = dict(
@@ -131,7 +153,18 @@ def plot_precip_forecast(times, precip):
 '''Return a plot of forecasted humidity data'''
 def plot_humid_forecast(times, humid):
     fig = go.Figure()
-    fig.add_trace(go.Scatter(x=list(range(len(humid))), y=humid, line_shape='spline', line=dict(color='steelBlue'), fill='tozeroy'))
+    fig.add_trace(go.Scatter(
+        x=list(range(len(humid))),
+        y=humid,
+        line_shape='spline',
+        line=dict(color='steelBlue'),
+        fill='tozeroy',
+        mode='markers+text',
+        # Display rounded temperatures above all points but the first and last
+        text=[round(humid[i]) if i in range(1,len(humid)-1) else None for i in range(len(humid))],
+        textfont=dict(size=14),
+        textposition='top center'
+    ))
     fig.update_layout(
         yaxis_title='Humidity %',
         xaxis = dict(
