@@ -194,7 +194,7 @@ def get_daily_forecast(manager, lat, lon, timezone_name):
 
     times = [now + timedelta(days=i) for i in range(7)]
     times_fmt = [t.strftime('%A') for t in times]
-    
+
     forecast_daily = manager.one_call(lat, lon).forecast_daily
     temps_hi =  [round(w.temperature('fahrenheit')['max']) for w in forecast_daily][:7]
     temps_lo =  [round(w.temperature('fahrenheit')['min']) for w in forecast_daily][:7]
@@ -456,9 +456,16 @@ def refresh_page(n_intervals, location):
     ]
 )
 def update_weekdays(n_intervals, datetime, location):
-    # Only check for new daily forecasts at midnight
-    if datetime.split()[1] == '12:00':
-        if datetime.split()[2] == 'AM':
+    # Check which input triggered the callback
+    context = dash.callback_context
+    if context.triggered:
+        input_id = context.triggered[0]['prop_id'].split('.')[0]
+
+    loc_triggered = (input_id == 'memory-output')
+
+    # Only check for new daily forecasts at midnight or on page load
+    if loc_triggered or datetime.split()[1] == '12:00':
+        if loc_triggered or datetime.split()[2] == 'AM':
 
             manager, weather, city, state, country, timezone_name, lat, lon, time, weekday = initialize_weather(location)
             weekdays, daily_hi, daily_lo, daily_icon = get_daily_forecast(manager, lat, lon, timezone_name)
@@ -483,9 +490,16 @@ def update_weekdays(n_intervals, datetime, location):
     
 )
 def update_daily_icons(n_intervals, datetime, location):
-    # Only check for new daily forecasts at midnight
-    if datetime.split()[1] == '12:00':
-        if datetime.split()[2] == 'AM':
+    # Check which input triggered the callback
+    context = dash.callback_context
+    if context.triggered:
+        input_id = context.triggered[0]['prop_id'].split('.')[0]
+
+    loc_triggered = (input_id == 'memory-output')
+
+    # Only check for new daily forecasts at midnight or on page load
+    if loc_triggered or datetime.split()[1] == '12:00':
+        if loc_triggered or datetime.split()[2] == 'AM':
         
             manager, weather, city, state, country, timezone_name, lat, lon, time, weekday = initialize_weather(location)
             weekdays, daily_hi, daily_lo, daily_icon = get_daily_forecast(manager, lat, lon, timezone_name)
@@ -508,9 +522,16 @@ def update_daily_icons(n_intervals, datetime, location):
     ]
 )
 def update_daily_hi_lo(n_intervals, datetime, location):
+    # Check which input triggered the callback
+    context = dash.callback_context
+    if context.triggered:
+        input_id = context.triggered[0]['prop_id'].split('.')[0]
+
+    loc_triggered = (input_id == 'memory-output')
+
     # Only check for new daily forecasts at midnight or on page load
-    if n_intervals > 0 and datetime.split()[1] == '12:00':
-        if datetime.split()[2] == 'AM':
+    if loc_triggered or n_intervals > 0 and datetime.split()[1] == '12:00':
+        if loc_triggered or datetime.split()[2] == 'AM':
 
             manager, weather, city, state, country, timezone_name, lat, lon, time, weekday = initialize_weather(location)
             weekdays, daily_hi, daily_lo, daily_icon = get_daily_forecast(manager, lat, lon, timezone_name)
