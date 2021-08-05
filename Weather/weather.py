@@ -72,7 +72,7 @@ def get_forecast(manager, city, state, country, timezone_name):
     now = datetime.now().astimezone(timezone)
 
     times = [now + timedelta(hours=3*i) for i in range(8)]
-    times_fmt = [t.strftime('%I:00 %p') for t in times]
+    times_fmt = [t.strftime('%I %p').lstrip('0') for t in times]
 
     forecast_hourly = manager.forecast_at_place(f'{city}, {state}, {country}', '3h')
 
@@ -88,15 +88,17 @@ def plot_temp_forecast(times, temps):
     fig.add_trace(go.Scatter(x=list(range(len(temps))), y=temps, line_shape='spline', line=dict(color='steelBlue'), fill='tozeroy'))
     fig.update_layout(
         yaxis_title='Temperature \u00b0F',
-        xaxis_title='Time',
         xaxis = dict(
             tickvals = list(range(len(times))),
             ticktext = times,
         ),
+        height = 410,
         margin = {
-            't': 50
+            't': 50,
+            'b': 50
         },
-        yaxis_range=(0.5*(3*min(temps) - max(temps)), 0.5*(3*max(temps) - min(temps)))
+        yaxis_range=(0.5*(3*min(temps) - max(temps)), 0.5*(3*max(temps) - min(temps))),
+        font = dict(size=14)
     )
     fig.update_xaxes(fixedrange=True)
     fig.update_yaxes(fixedrange=True)
@@ -109,15 +111,17 @@ def plot_precip_forecast(times, precip):
     fig.add_trace(go.Scatter(x=list(range(len(precip))), y=precip, line_shape='spline', line=dict(color='steelBlue'), fill='tozeroy'))
     fig.update_layout(
         yaxis_title='Precipitation (mm)',
-        xaxis_title='Time',
         xaxis = dict(
             tickvals = list(range(len(times))),
             ticktext = times,
         ),
+        height = 410,
         margin = {
-            't': 50
+            't': 50,
+            'b': 50
         },
-        yaxis_range=(max(0, 0.5*(3*min(precip) - max(precip))), 0.5*(3*max(precip) - min(precip)))
+        yaxis_range=(max(0, 0.5*(3*min(precip) - max(precip))), 0.5*(3*max(precip) - min(precip))),
+        font = dict(size=14)
     )
     fig.update_xaxes(fixedrange=True)
     fig.update_yaxes(fixedrange=True)
@@ -130,15 +134,17 @@ def plot_humid_forecast(times, humid):
     fig.add_trace(go.Scatter(x=list(range(len(humid))), y=humid, line_shape='spline', line=dict(color='steelBlue'), fill='tozeroy'))
     fig.update_layout(
         yaxis_title='Humidity %',
-        xaxis_title='Time',
         xaxis = dict(
             tickvals = list(range(len(times))),
             ticktext = times,
         ),
+        height = 410,
         margin = {
-            't': 50
+            't': 50,
+            'b': 50
         },
-        yaxis_range=(max(0, 0.5*(3*min(humid) - max(humid))), 0.5*(3*max(humid) - min(humid)))
+        yaxis_range=(max(0, 0.5*(3*min(humid) - max(humid))), 0.5*(3*max(humid) - min(humid))),
+        font = dict(size=14)
     )
     fig.update_xaxes(fixedrange=True)
     fig.update_yaxes(fixedrange=True)
@@ -469,8 +475,8 @@ def update_daily_icons(n_intervals, datetime, location):
     ]
 )
 def update_daily_hi_lo(n_intervals, datetime, location):
-    # Only check for new daily forecasts at midnight
-    if datetime.split()[1] == '12:00':
+    # Only check for new daily forecasts at midnight or on page load
+    if n_intervals > 0 and datetime.split()[1] == '12:00':
         if datetime.split()[2] == 'AM':
 
             manager, weather, city, state, country, timezone_name, lat, lon, time, weekday = initialize_weather(location)
