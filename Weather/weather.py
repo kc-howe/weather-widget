@@ -127,7 +127,7 @@ def plot_precip_forecast(times, precip):
         fill='tozeroy',
         mode='markers+text',
         # Display rounded temperatures above all points but the first and last
-        text=[round(precip[i]) if i in range(1,len(precip)-1) else None for i in range(len(precip))],
+        text=[round(precip[i], 2) if i in range(1,len(precip)-1) else None for i in range(len(precip))],
         textfont=dict(size=14),
         textposition='top center'
     ))
@@ -390,9 +390,6 @@ app.layout = layout_function
 )
 def update_location(pathname):
     ip = request.remote_addr
-
-    if ip == '127.0.0.1':
-        ip = '8.8.8.8'
 
     url = f'http://ipinfo.io/{ip}?token=00dd9ffb16a928'
     response = urlopen(url)
