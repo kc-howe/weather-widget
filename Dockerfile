@@ -8,8 +8,7 @@ RUN pip install pyowm
 # set the directory in the container we want to work in
 WORKDIR /app
 # where from on your machine and where to on the container
-COPY ./Weather .
+COPY ./App .
 
 # command to autorun our project conde in the container
-CMD ["python", "weather.py"]
-
+CMD ["python", "weather_widget.py"]
