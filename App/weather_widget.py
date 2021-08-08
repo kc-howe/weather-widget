@@ -169,7 +169,7 @@ def plot_humid_forecast(times, humid):
         textfont=dict(size=14),
         textposition='top center',
         #fillcolor='rgba(205,185,235,0.5)'
-        fillcolor='rgba(222, 201, 255, 0.5)'
+        fillcolor='rgba(225, 204, 255, 0.5)'
     ))
     fig.update_layout(
         template='plotly_white',
