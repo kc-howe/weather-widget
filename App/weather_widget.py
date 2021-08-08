@@ -95,6 +95,7 @@ def plot_temp_forecast(times, temps):
         text=[round(temps[i]) if i in range(1,len(temps)-1) else None for i in range(len(temps))],
         textfont=dict(size=14),
         textposition='top center',
+        #fillcolor='rgba(113,243,196,0.5)'
         fillcolor='rgba(117,250,202,0.5)'
     ))
     fig.update_layout(
@@ -130,7 +131,8 @@ def plot_precip_forecast(times, precip):
         text=[round(precip[i], 2) if i in range(1,len(precip)-1) else None for i in range(len(precip))],
         textfont=dict(size=14),
         textposition='top center',
-        fillcolor='rgba(70,130,180,0.5)'
+        #fillcolor='rgba(70,130,180,0.5)'
+        fillcolor='rgba(77,143,198,0.5)'
 
     ))
     fig.update_layout(
@@ -166,7 +168,8 @@ def plot_humid_forecast(times, humid):
         text=[round(humid[i]) if i in range(1,len(humid)-1) else None for i in range(len(humid))],
         textfont=dict(size=14),
         textposition='top center',
-        fillcolor='rgba(205,185,235,0.5)'
+        #fillcolor='rgba(205,185,235,0.5)'
+        fillcolor='rgba(222, 201, 255, 0.5)'
     ))
     fig.update_layout(
         template='plotly_white',
