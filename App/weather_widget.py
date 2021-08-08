@@ -166,7 +166,7 @@ def plot_humid_forecast(times, humid):
         text=[round(humid[i]) if i in range(1,len(humid)-1) else None for i in range(len(humid))],
         textfont=dict(size=14),
         textposition='top center',
-        fillcolor='rgba(180,185,225,0.5)'
+        fillcolor='rgba(205,185,235,0.5)'
     ))
     fig.update_layout(
         template='plotly_white',
