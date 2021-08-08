@@ -217,13 +217,16 @@ def get_emergency_alerts(manager, lat, lon, timezone_name):
 
         senders = [alert['sender_name'] for alert in alerts]
         events = [alert['event'] for alert in alerts]
-        starts = [datetime.utcfromtimestamp(alert['start']).astimezone(timezone_name).strftime('%I:%M %p') for alert in alerts] # ugly
-        ends = [datetime.utcfromtimestamp(alert['end']).astimezone(timezone_name).strftime('%I:%M %p') for alert in alerts]
+        starts = [datetime.utcfromtimestamp(alert['start']).astimezone(timezone).strftime('%I:%M %p') for alert in alerts] # ugly
+        ends = [datetime.utcfromtimestamp(alert['end']).astimezone(timezone).strftime('%I:%M %p') for alert in alerts]
         descriptions = [alert['description'] for alert in alerts]
 
         return senders, events, starts, ends, descriptions
     
     return None, None, None, None, None
+
+def log_emergency(emergency):
+    print(emergency)
 #%% Build Dash App
 
 external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
@@ -298,14 +301,19 @@ def layout_function():
         ),
         
         # National Weather Alerts
-        html.Div(
-            dcc.Markdown(id='emergency-alert', children=''),
+        html.Details(
+            [
+                html.Summary('\u26A0 National Weather Alert:\n\n'),
+                dcc.Markdown(id='emergency-alert', children='')
+            ],
+            id = 'emergency-alert-div',
             style={'display':'none'}
         ),
 
         # Temp Forecast
         html.Div(
-            dcc.Tabs(id='forecast-tabs', children=[
+            id = 'tabs-div',
+            children = dcc.Tabs(id='forecast-tabs', children=[
                 dcc.Tab(label='Temperature',children=[
                     dcc.Graph(id='temperature-forecast', figure=plot_temp_forecast(times, temps)),
                 ],
@@ -544,7 +552,9 @@ def update_daily_hi_lo(n_intervals, datetime, location):
 @app.callback(
     [
         Output(component_id='emergency-alert-div', component_property='style'),
-        Output(component_id='emergency-alert', component_property='children')
+        Output(component_id='emergency-alert', component_property='children'),
+
+        Output(component_id='tabs-div', component_property='style')
     ],
 
     [
@@ -557,19 +567,22 @@ def update_emergency_alert(n_intervals, location):
 
     senders, events, starts, ends, descriptions = get_emergency_alerts(manager, lat, lon, timezone_name)
 
-    style = {'display':'none'}
+    alert_style = {'display':'none'}
+    tabs_style={'float':'bottom', 'padding-top':'100px', 'width':'100%'}
+
     message = ''
 
     if senders:
 
-        style = {'color':'white', 'background-color':'crimson', 'text-align':'justify', 'border-radius':'5px', 'width':'100%', 'display':'inline-block','padding-top':'5px', 'padding-left':'10px'}
+        alert_style = {'color':'white', 'background-color':'crimson', 'text-align':'justify', 'border-radius':'5px', 'width':'100%', 'display':'inline-block','padding-top':'5px', 'padding-left':'10px'}
+        tabs_style={'float':'bottom', 'padding-top':'30px', 'width':'100%'}
 
-        for i in len(senders):
-            message = f'**\u26A0 National Weather Alert:** {senders[i]} has issued a {events[i]} from {starts[i]} until {ends[i]}.\n\n{descriptions[i]}'
-            if len(senders > i+1):
-                message += '\n\n'
+        for i in range(len(senders)):
+            message = f'\n\n{senders[i]} has issued a {events[i]} in effect from {starts[i]} until {ends[i]}.\n\n{descriptions[i]}'
 
-    return style, message
+    log_emergency(message)
+
+    return alert_style, message, tabs_style
 
 if __name__ == '__main__':
     app.run_server(debug=False, port=80, host='0.0.0.0')
