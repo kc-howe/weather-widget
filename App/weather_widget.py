@@ -132,7 +132,8 @@ def plot_precip_forecast(times, precip):
         textfont=dict(size=14),
         textposition='top center',
         #fillcolor='rgba(70,130,180,0.5)'
-        fillcolor='rgba(77,143,198,0.5)'
+        #fillcolor='rgba(77,143,198,0.5)'
+        fillcolor='rgba(85,157,218,0.5)'
 
     ))
     fig.update_layout(
