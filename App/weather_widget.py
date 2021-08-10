@@ -95,7 +95,6 @@ def plot_temp_forecast(times, temps):
         text=[round(temps[i]) if i in range(1,len(temps)-1) else None for i in range(len(temps))],
         textfont=dict(size=14),
         textposition='top center',
-        #fillcolor='rgba(113,243,196,0.5)'
         fillcolor='rgba(117,250,202,0.5)'
     ))
     fig.update_layout(
@@ -131,8 +130,6 @@ def plot_precip_forecast(times, precip):
         text=[round(precip[i], 2) if i in range(1,len(precip)-1) else None for i in range(len(precip))],
         textfont=dict(size=14),
         textposition='top center',
-        #fillcolor='rgba(70,130,180,0.5)'
-        #fillcolor='rgba(77,143,198,0.5)'
         fillcolor='rgba(85,157,218,0.5)'
 
     ))
@@ -169,7 +166,6 @@ def plot_humid_forecast(times, humid):
         text=[round(humid[i]) if i in range(1,len(humid)-1) else None for i in range(len(humid))],
         textfont=dict(size=14),
         textposition='top center',
-        #fillcolor='rgba(205,185,235,0.5)'
         fillcolor='rgba(225, 204, 255, 0.5)'
     ))
     fig.update_layout(
@@ -299,7 +295,7 @@ def layout_function():
                         ),  
                     ],
 
-                    style = {'float':'right', 'padding-right':'50px', 'text-align':'right'}
+                    style = {'float':'right', 'padding-right':'10px', 'text-align':'right'}
                 ),
             ]
         ),
@@ -308,7 +304,7 @@ def layout_function():
         html.Details(
             [
                 html.Summary('\u26A0 National Weather Alert:\n\n'),
-                dcc.Markdown(id='emergency-alert', children='')
+                dcc.Markdown(id='emergency-alert', children='', style={'padding-right':'10px'})
             ],
             id = 'emergency-alert-div',
             style={'display':'none'}
@@ -376,6 +372,8 @@ def layout_function():
             dcc.Markdown('Data provided by OpenWeather\u2122.'),
             style = {'padding-top':'100px','font-size':'12px'}
         ),
+
+        html.Br(),
 
         dcc.Interval(
             id='minute-interval',
