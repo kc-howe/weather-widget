@@ -576,7 +576,19 @@ def update_emergency_alert(n_intervals, location):
 
     if senders:
 
-        alert_style = {'color':'white', 'background-color':'crimson', 'text-align':'justify', 'border-radius':'5px', 'width':'100%', 'display':'inline-block','padding-top':'5px', 'padding-left':'10px'}
+        alert_style = {
+            'color':'white',
+            'background-color':'crimson',
+            'text-align':'justify',
+            'border-radius':'5px',
+            'width':'1012px',
+            'display':'inline-block',
+            'padding-top':'5px',
+            'padding-left':'10px',
+            'margin-right':'10px',
+            'details':'{height:30px}'
+        }
+
         tabs_style={'float':'bottom', 'padding-top':'30px', 'width':'100%'}
 
         for i in range(len(senders)):
