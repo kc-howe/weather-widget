@@ -224,14 +224,12 @@ def get_emergency_alerts(manager, lat, lon, timezone_name):
         return senders, events, starts, ends, descriptions
     
     return None, None, None, None, None
-
-def log_emergency(emergency):
-    print(emergency)
 #%% Build Dash App
 
-external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
+# Copied this stylesheet to a local folder after experiencing hiccups in accessibility
+#external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
 
-app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
+app = dash.Dash(__name__)#, external_stylesheets=external_stylesheets)
 
 app.title = 'Weather Data'
 
@@ -586,15 +584,12 @@ def update_emergency_alert(n_intervals, location):
             'padding-top':'5px',
             'padding-left':'10px',
             'margin-right':'10px',
-            'details':'{height:30px}'
         }
 
         tabs_style={'float':'bottom', 'padding-top':'30px', 'width':'100%'}
 
         for i in range(len(senders)):
             message = f'\n\n{senders[i]} has issued a {events[i]} in effect from {starts[i]} until {ends[i]}.\n\n{descriptions[i]}'
-
-    log_emergency(message)
 
     return alert_style, message, tabs_style
 
