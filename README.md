@@ -12,7 +12,7 @@ The fully deployed application is available [here](http://18.222.202.114/).
 - Location data provided by [ipinfo.io](https://ipinfo.io/).
 - Containerization performed using [Docker](https://www.docker.com/).
 - Deployed from an [AWS](https://aws.amazon.com/) EC2 instance.
-- Stylesheet copied from chriddyp's [Dash stylesheet](https://codepen.io/chriddyp/pen/bWLwgP.css) for local use.
+- Stylesheet from chriddyp's [Dash stylesheet](https://codepen.io/chriddyp/pen/bWLwgP.css), stored for local use.
 
 ## Notes
 - Location data may not be accurate when using a mobile network, as there is not necessarily any correlation between mobile IP addresses and a user's physical location.
