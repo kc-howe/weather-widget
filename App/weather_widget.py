@@ -104,7 +104,6 @@ def plot_temp_forecast(times, temps):
             tickvals = list(range(len(times))),
             ticktext = times,
         ),
-        height = 410,
         margin = {
             't': 50,
             'b': 50
@@ -140,7 +139,6 @@ def plot_precip_forecast(times, precip):
             tickvals = list(range(len(times))),
             ticktext = times,
         ),
-        height = 410,
         margin = {
             't': 50,
             'b': 50
@@ -175,7 +173,6 @@ def plot_humid_forecast(times, humid):
             tickvals = list(range(len(times))),
             ticktext = times,
         ),
-        height = 410,
         margin = {
             't': 50,
             'b': 50
@@ -295,7 +292,7 @@ def layout_function():
 
                     style = {'float':'right', 'padding-right':'10px', 'text-align':'right'}
                 ),
-            ]
+            ],
         ),
         
         # National Weather Alerts
@@ -313,21 +310,22 @@ def layout_function():
             id = 'tabs-div',
             children = dcc.Tabs(id='forecast-tabs', children=[
                 dcc.Tab(label='Temperature',children=[
-                    dcc.Graph(id='temperature-forecast', figure=plot_temp_forecast(times, temps)),
+                    dcc.Graph(id='temperature-forecast', figure=plot_temp_forecast(times, temps), style={'height':'33vw'}),
                 ],
                 style = {'padding':0, 'line-height':30, 'backgroundColor':'white', 'borderTop':'0px', 'borderLeft':'0px', 'borderBottom':'0px'},
                 selected_style={'padding':0, 'line-height':30, 'borderTop':'0px', 'borderLeft':'0px', 'borderBottom':'2px solid tomato'}
                 ),
 
                 dcc.Tab(label='Precipitation',children=[
-                    dcc.Graph(id='precipitation-forecast', figure=plot_precip_forecast(times, precip)),
+                    dcc.Graph(id='precipitation-forecast', figure=plot_precip_forecast(times, precip), style={'height':'33vw'}),
                 ],
+
                 style = {'padding':0, 'line-height':30, 'backgroundColor':'white', 'borderTop':'0px','borderBottom':'0px'},
                 selected_style={'padding':0, 'line-height':30, 'borderTop':'0px', 'borderBottom':'2px solid tomato'}
                 ),
 
                 dcc.Tab(label='Humidity',children=[
-                    dcc.Graph(id='humidity-forecast', figure=plot_humid_forecast(times, humid)),
+                    dcc.Graph(id='humidity-forecast', figure=plot_humid_forecast(times, humid), style={'height':'33vw'}),
                 ],
                 style = {'padding':0, 'line-height':30, 'backgroundColor':'white', 'borderTop':'0px', 'borderRight':'0px', 'borderBottom':'0px'},
                 selected_style={'padding':0, 'line-height':30, 'borderTop':'0px', 'borderRight':'0px', 'borderBottom':'2px solid tomato'}
@@ -391,7 +389,7 @@ def layout_function():
         # Storing client ip in a Store object
         dcc.Store(id='memory-output', data=location)
 
-    ], style={'width':'1024px'}))
+    ]))
 
 app.layout = layout_function
 
