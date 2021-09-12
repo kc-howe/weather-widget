@@ -310,14 +310,14 @@ def layout_function():
             id = 'tabs-div',
             children = dcc.Tabs(id='forecast-tabs', children=[
                 dcc.Tab(label='Temperature',children=[
-                    dcc.Graph(id='temperature-forecast', figure=plot_temp_forecast(times, temps), style={'height':'33vw'}),
+                    dcc.Graph(id='temperature-forecast', figure=plot_temp_forecast(times, temps), style={'height':'30vw'}),
                 ],
                 style = {'padding':0, 'line-height':30, 'backgroundColor':'white', 'borderTop':'0px', 'borderLeft':'0px', 'borderBottom':'0px'},
                 selected_style={'padding':0, 'line-height':30, 'borderTop':'0px', 'borderLeft':'0px', 'borderBottom':'2px solid tomato'}
                 ),
 
                 dcc.Tab(label='Precipitation',children=[
-                    dcc.Graph(id='precipitation-forecast', figure=plot_precip_forecast(times, precip), style={'height':'33vw'}),
+                    dcc.Graph(id='precipitation-forecast', figure=plot_precip_forecast(times, precip), style={'height':'30vw'}),
                 ],
 
                 style = {'padding':0, 'line-height':30, 'backgroundColor':'white', 'borderTop':'0px','borderBottom':'0px'},
@@ -325,7 +325,7 @@ def layout_function():
                 ),
 
                 dcc.Tab(label='Humidity',children=[
-                    dcc.Graph(id='humidity-forecast', figure=plot_humid_forecast(times, humid), style={'height':'33vw'}),
+                    dcc.Graph(id='humidity-forecast', figure=plot_humid_forecast(times, humid), style={'height':'30vw'}),
                 ],
                 style = {'padding':0, 'line-height':30, 'backgroundColor':'white', 'borderTop':'0px', 'borderRight':'0px', 'borderBottom':'0px'},
                 selected_style={'padding':0, 'line-height':30, 'borderTop':'0px', 'borderRight':'0px', 'borderBottom':'2px solid tomato'}
@@ -389,7 +389,7 @@ def layout_function():
         # Storing client ip in a Store object
         dcc.Store(id='memory-output', data=location)
 
-    ]))
+    ], style={'width':'80%'}))
 
 app.layout = layout_function
 
