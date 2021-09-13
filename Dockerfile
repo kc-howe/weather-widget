@@ -8,9 +8,7 @@ RUN pip install pyowm
 # set the directory in the container we want to work in
 WORKDIR /app
 # where from on your machine and where to on the container
-COPY ./App .
-
-RUN ls -la .
+COPY ./app .
 
 # command to autorun our project conde in the container
 CMD ["python", "index.py"]

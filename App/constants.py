@@ -8,6 +8,7 @@ def get_constants():
 
     DAYTON = {'city': 'Dayton', 'region': 'Ohio', 'country': 'US', 'timezone': 'America/New_York', 'loc':'39.7589,-84.1916'}
 
+    # Relative path will not work locally but will work on Docker build
     with open('./api_keys/owm_key.txt', 'r') as f:
         API_KEY = f.read()
 
