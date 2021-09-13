@@ -8,7 +8,7 @@ def get_constants():
 
     DAYTON = {'city': 'Dayton', 'region': 'Ohio', 'country': 'US', 'timezone': 'America/New_York', 'loc':'39.7589,-84.1916'}
 
-    with open('App/api_keys/owm_key.txt', 'r') as f:
+    with open('./api_keys/owm_key.txt', 'r') as f:
         API_KEY = f.read()
 
     MGR = ForecastManager(DAYTON, API_KEY)

@@ -10,5 +10,7 @@ WORKDIR /app
 # where from on your machine and where to on the container
 COPY ./App .
 
+RUN ls -la .
+
 # command to autorun our project conde in the container
 CMD ["python", "index.py"]
