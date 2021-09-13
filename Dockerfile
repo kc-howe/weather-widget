@@ -11,4 +11,4 @@ WORKDIR /app
 COPY ./App .
 
 # command to autorun our project conde in the container
-CMD ["python", "weather_widget.py"]
+CMD ["python", "index.py"]
