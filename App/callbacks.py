@@ -11,7 +11,7 @@ from app import app
 import json
 import dash
 
-STATES_DF, DAYTON, API_KEY, MGR = get_constants()
+STATES_DF, DAYTON, OWM_KEY, IP_KEY, MGR = get_constants()
 
 '''Store location JSON data in Store object'''
 @app.callback(
@@ -21,7 +21,7 @@ STATES_DF, DAYTON, API_KEY, MGR = get_constants()
 def update_location(pathname):
     ip = request.remote_addr
 
-    url = f'http://ipinfo.io/{ip}?token=00dd9ffb16a928'
+    url = f'http://ipinfo.io/{ip}?token={IP_KEY}'
     response = urlopen(url)
     data = json.load(response)
 

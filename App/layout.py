@@ -7,7 +7,7 @@ import dash_html_components as html
 '''Define the layout of the Dash application'''
 def layout_function():
 
-    STATES_DF, DAYTON, API_KEY, MGR = get_constants()
+    STATES_DF, DAYTON, OWM_KEY, IP_KEY, MGR = get_constants()
 
     wtr_manager, weather, city, state, country, timezone_name, lat, lon, time, weekday = MGR.initialize_weather(DAYTON, STATES_DF)
     wtr = MGR.get_weather_fmt(weather)
