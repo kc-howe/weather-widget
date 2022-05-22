@@ -1,6 +1,7 @@
 /* Table of contents
 ––––––––––––––––––––––––––––––––––––––––––––––––––
 - Plotly.js
+- App Body
 - Grid
 - Base Styles
 - Typography
@@ -32,6 +33,24 @@
     z-index: 1002;
 }*/
 
+/* App Body
+–––––––––––––––––––––––––––––––––––––––––––––––––– */
+.app-body {
+  width: 100%; }
+
+  /* Larger than Desktop HD */
+  @media (min-width: 1281px) {
+    .app-body {
+      width: 80%;
+    }
+  }
+
+  /* Larger than Desktop Full HD */
+  @media (min-width: 1921px) {
+    .app-body {
+      width: 60%;
+    }
+  }
 
 /* Grid
 –––––––––––––––––––––––––––––––––––––––––––––––––– */
@@ -397,8 +416,7 @@
   on small devices, paste the mobile query code up in the buttons section and style it
   there.
   */
-  
-  
+
   /* Larger than mobile */
   @media (min-width: 400px) {}
   

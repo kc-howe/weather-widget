@@ -198,9 +198,10 @@ def update_emergency_alert(n_intervals, location):
             'background-color':'crimson',
             'text-align':'justify',
             'border-radius':'5px',
-            'width':'1012px',
+            'width':'100%',
             'display':'inline-block',
-            'padding-top':'5px',
+            'padding-top':'2px',
+            'padding-bottom':'2px',
             'padding-left':'10px',
             'margin-right':'10px',
         }
