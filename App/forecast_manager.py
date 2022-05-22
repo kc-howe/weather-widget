@@ -34,7 +34,8 @@ class ForecastManager():
 
         reg = owm.city_id_registry()
         state_abbr = states[states['State']==state]['Abbreviation'].values[0]
-        city_id, city, state = reg.ids_for(city, state_abbr)[0]
+        city_ids = reg.ids_for(city, country=country, state=state_abbr)
+        city_id, city, _country, state, _lat, _lon = city_ids[0]
 
         timezone = pytz.timezone(timezone_name)
         time = datetime.today().astimezone(timezone).strftime('%I:%M %p')
