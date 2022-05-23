@@ -3,6 +3,7 @@ from forecast_plotter import ForecastPlotter
 
 import dash_core_components as dcc
 import dash_html_components as html
+import dash_leaflet as dl
 
 '''Define the layout of the Dash application'''
 def layout_function():
@@ -89,13 +90,34 @@ def layout_function():
                     dcc.Tab(label='Precipitation',children=[
                         dcc.Graph(id='precipitation-forecast', figure=forecast_plotter.plot_precip_forecast(), style={'height':'30vw'}),
                     ],
-
                     style = {'padding':0, 'line-height':30, 'backgroundColor':'white', 'borderTop':'0px','borderBottom':'0px'},
                     selected_style={'padding':0, 'line-height':30, 'borderTop':'0px', 'borderBottom':'2px solid tomato'}
                     ),
 
                     dcc.Tab(label='Humidity',children=[
                         dcc.Graph(id='humidity-forecast', figure=forecast_plotter.plot_humid_forecast(), style={'height':'30vw'}),
+                    ],
+                    style = {'padding':0, 'line-height':30, 'backgroundColor':'white', 'borderTop':'0px', 'borderRight':'0px', 'borderBottom':'0px'},
+                    selected_style={'padding':0, 'line-height':30, 'borderTop':'0px', 'borderRight':'0px', 'borderBottom':'2px solid tomato'}
+                    ),
+
+                    dcc.Tab(label='Map', children=[
+                        html.Div(
+                            dl.Map(
+                                dl.TileLayer(),
+                                id = 'map',
+                                center = (lat, lon),
+                                zoom = 11,
+                                dragging = False,
+                                touchZoom = False,
+                                doubleClickZoom = False,
+                                scrollWheelZoom = False,
+                                boxZoom = False,
+                                keyboard = False,
+                                zoomControl = False,
+                            ),
+                            style = {'height':'calc(30vw - 80px)', 'margin-top':'40px' , 'margin-bottom':'40px', 'width':'calc(100% - 160px)', 'margin-left':'80px', 'margin-right':'80px'}
+                        ),
                     ],
                     style = {'padding':0, 'line-height':30, 'backgroundColor':'white', 'borderTop':'0px', 'borderRight':'0px', 'borderBottom':'0px'},
                     selected_style={'padding':0, 'line-height':30, 'borderTop':'0px', 'borderRight':'0px', 'borderBottom':'2px solid tomato'}

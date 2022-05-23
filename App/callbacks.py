@@ -1,3 +1,5 @@
+from matplotlib.font_manager import json_dump
+from weather_map import WeatherMap
 from constants import get_constants
 from forecast_plotter import ForecastPlotter
 
@@ -10,6 +12,8 @@ from app import app
 
 import json
 import dash
+
+import dash_leaflet as dl
 
 STATES_DF, DAYTON, OWM_KEY, IP_KEY, MGR = get_constants()
 
@@ -41,14 +45,17 @@ Interval object used to update the time/temperature/status data every minute
         Output(component_id='temperature-forecast', component_property='figure'),
         Output(component_id='precipitation-forecast', component_property='figure'),
         Output(component_id='humidity-forecast', component_property='figure'),
+        Output(component_id='map', component_property='children'),
+        Output(component_id='map', component_property='center')
     ],
     
     [
         Input(component_id='minute-interval', component_property='n_intervals'),
-        Input(component_id='memory-output', component_property='data')
+        Input(component_id='memory-output', component_property='data'),
+        Input(component_id='map', component_property='bounds')
     ]
 )
-def refresh_page(n_intervals, location):
+def refresh_page(n_intervals, location, bounds_json):
     manager, weather, city, state, country, timezone_name, lat, lon, time, weekday = MGR.initialize_weather(location, STATES_DF)
     wtr = MGR.get_weather_fmt(weather)
     forecast = MGR.get_forecast(manager, city, state, country, timezone_name)
@@ -62,13 +69,18 @@ def refresh_page(n_intervals, location):
     
     location = f'##### {city}, {state}'
     
-    date_time_status = children = f'{weekday} {time}\n\n{wtr["status"]}'
+    date_time_status = f'{weekday} {time}\n\n{wtr["status"]}'
 
     temp_fig = forecast_plotter.plot_temp_forecast()
     precip_fig = forecast_plotter.plot_precip_forecast()
     humid_fig = forecast_plotter.plot_humid_forecast()
 
-    return icon, temp, status, location, date_time_status, temp_fig, precip_fig, humid_fig
+    center = (lat, lon)
+    bounds = eval(json.dumps(bounds_json))
+    weather_map = WeatherMap(center, 11, bounds, OWM_KEY)
+    layers = weather_map.layers
+
+    return icon, temp, status, location, date_time_status, temp_fig, precip_fig, humid_fig, layers, center
 
 '''Update daily forecast weekday names'''
 @app.callback(

@@ -4,6 +4,7 @@ FROM continuumio/anaconda3
 # need to update apt package repo before we can install packages with apt
 # RUN conda install otehr packages (if needed)
 RUN conda install -y dash
+RUN pip install dash-leaflet
 RUN pip install pyowm
 # set the directory in the container we want to work in
 WORKDIR /app
