@@ -50,12 +50,15 @@ Interval object used to update the time/temperature/status data every minute
     ],
     
     [
+        Input(component_id='url', component_property='pathname'),
         Input(component_id='minute-interval', component_property='n_intervals'),
         Input(component_id='memory-output', component_property='data'),
         Input(component_id='map', component_property='bounds')
-    ]
+    ],
+    prevent_initial_callback=False
 )
-def refresh_page(n_intervals, location, bounds_json):
+def refresh_page(pathname, n_intervals, location, bounds_json):
+    log = f'Refresh called. ({n_intervals})'
     manager, weather, city, state, country, timezone_name, lat, lon, time, weekday = MGR.initialize_weather(location, STATES_DF)
     wtr = MGR.get_weather_fmt(weather)
     forecast = MGR.get_forecast(manager, city, state, country, timezone_name)
@@ -76,9 +79,15 @@ def refresh_page(n_intervals, location, bounds_json):
     humid_fig = forecast_plotter.plot_humid_forecast()
 
     center = (lat, lon)
-    bounds = eval(json.dumps(bounds_json))
-    weather_map = WeatherMap(center, 11, bounds, OWM_KEY)
-    layers = weather_map.layers
+
+    # Try to read JSON data from bounds object
+    try:
+        bounds = eval(json.dumps(bounds_json))
+        weather_map = WeatherMap(center, 11, bounds, OWM_KEY)
+        layers = weather_map.layers
+    # Null JSON object should trigger an exception
+    except:
+        layers = [dl.TileLayer()]
 
     return icon, temp, status, location, date_time_status, temp_fig, precip_fig, humid_fig, layers, center
 
